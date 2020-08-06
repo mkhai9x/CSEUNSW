@@ -42,44 +42,44 @@ database_clients = {}
 # A dicitonary stores blocked clients
 blocked_clients = {}
 
-# def update_tempID(filename, database_clients):
-#     """
-#     This function is used to check every tempID in the tempIDs.txt file
-#     If a tempID expires, this function will provide that user a new tempID with duration of TEMPID_DURATION minutes
+def update_tempID(filename, database_clients):
+    """
+    This function is used to check every tempID in the tempIDs.txt file
+    If a tempID expires, this function will provide that user a new tempID with duration of TEMPID_DURATION minutes
     
-#     Parameters
-#     ----------
-#     filename: str
-#         the name of the file that contains all the tempIDs information
-#     database_clients:   
-#     """
-#     tempID_file = open(filename,'r')
-#     lines = tempID_file.readlines()
-#     new_file_content = ""
-#     for line in lines:
-#         try:
-#             line.strip()
-#             current_time = datetime.datetime.now()
-#             infor = line.strip().split()
-#             user = database_clients[infor[0]]
-#             start_time = user['tempID']['start_time'] 
-#             different = (current_time - start_time).total_seconds()/60
-#             if different > TEMPID_DURATION:
-#                 new_tempID = ''.join(choice(string.digits) for i in range(20))
-#                 user['tempID']['ID'] = new_tempID
-#                 user['tempID']['start_time'] = current_time
-#                 duration = current_time + datetime.timedelta(minutes=TEMPID_DURATION)
-#                 new_start_time = current_time.strftime('%d/%m/%Y %H:%M:%S') 
-#                 new_line = infor[0]+ " " + new_tempID + " " + new_start_time + " " + duration.strftime('%d/%m/%Y %H:%M:%S') + "\n"
-#                 new_file_content += new_line
-#             else:
-#                 new_file_content = new_file_content + line 
-#         except:
-#             continue
-#     tempID_file.close()
-#     writing_new_tempID_file = open(filename,'w')
-#     writing_new_tempID_file.write(new_file_content)
-#     writing_new_tempID_file.close()
+    Parameters
+    ----------
+    filename: str
+        the name of the file that contains all the tempIDs information
+    database_clients:   
+    """
+    tempID_file = open(filename,'r')
+    lines = tempID_file.readlines()
+    new_file_content = ""
+    for line in lines:
+        try:
+            line.strip()
+            current_time = datetime.datetime.now()
+            infor = line.strip().split()
+            user = database_clients[infor[0]]
+            start_time = user['tempID']['start_time'] 
+            different = (current_time - start_time).total_seconds()/60
+            if different > TEMPID_DURATION:
+                new_tempID = ''.join(choice(string.digits) for i in range(20))
+                user['tempID']['ID'] = new_tempID
+                user['tempID']['start_time'] = current_time
+                duration = current_time + datetime.timedelta(minutes=TEMPID_DURATION)
+                new_start_time = current_time.strftime('%d/%m/%Y %H:%M:%S') 
+                new_line = infor[0]+ " " + new_tempID + " " + new_start_time + " " + duration.strftime('%d/%m/%Y %H:%M:%S') + "\n"
+                new_file_content += new_line
+            else:
+                new_file_content = new_file_content + line 
+        except:
+            continue
+    tempID_file.close()
+    writing_new_tempID_file = open(filename,'w')
+    writing_new_tempID_file.write(new_file_content)
+    writing_new_tempID_file.close()
 
 def display_contact_log(contact, isChecking):
     """

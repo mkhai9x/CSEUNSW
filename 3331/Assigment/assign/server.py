@@ -1,3 +1,11 @@
+"""
+Zid: z5168080
+Used the sample code as reference from 
+https://www.youtube.com/watch?v=CV7_stUWvBQ
+
+Usage: 
+python3 server.py <server_port> <block_duration>
+"""
 import socket
 import select # the way to manage many connections
 import datetime
@@ -8,8 +16,8 @@ import threading
 import time
 HEADER_LENGTH = 10
 SERVER_IP = 'localhost'
-SERVER_PORT = 1234
-BLOCK_DURATION  = 60
+SERVER_PORT = int(sys.argv[1])
+BLOCK_DURATION  = int(sys.argv[2])
 LOGIN_SUCCESSFULL = "Welcome to the BlueTrace Simulator!"
 LOGIN_WRONG_PASSWORD =  "Invalid Password. Please try again"
 LOGIN_BLOCK = "Invalid Password. Your account has been blocked. Please try again later"
@@ -22,6 +30,7 @@ CONTACT_LOG_CHECKING = "contactISBeingChecked"
 
 TEMPID_FILE = "tempIDs.txt"
 TEMPID_DURATION = 15
+SPACE_ENTER = "spaceEnter"
 #Create a server socket
 server_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 
@@ -291,55 +300,61 @@ while True:
             message = receive_message(notified_socket)
             #check for wheter message is valid or not
             if message is False:
-                
                 sockets_list.remove(notified_socket)
                 del clients[notified_socket]
                 continue
             user = clients[notified_socket]
 
             #get command from the client
-            command = message['data'].decode('utf-8').strip().split()[0]
-            if command == "Download_tempID":
-                start_time = datetime.datetime.now()
-                #Create new tempID using tempID_generator to make user to duplicate tempID
-                tempID = tempID_generator(TEMPID_FILE)
-                update_tempID_file(user['data'],tempID,start_time)
-                message = f"TempID: {tempID}"
-                message_header = f"{len(message):<{HEADER_LENGTH}}".encode('utf-8')
-                notified_socket.send(message_header+message.encode('utf-8'))
-                #Server print out to the console
-                print(f"> user: {user['data']}")
-                print(f"> TempID: {tempID}")
-               
-
-            elif command == "Upload_contact_log":
-            #For this command, the client send two packets, first packet is about command, 
-            #second packet is about the message (the file's content)
-                file_content = receive_message(notified_socket)
-                if file_content is False:
-                    continue
-                else:
-                    contact_log = file_content['data'].decode('utf-8').strip()
-                    print(f"> received contact log from {user['data']}")
-                    display_contact_log(contact_log,False)
-                    print("> Contact log checking")
-                    display_contact_log(contact_log,True)
+            try:
+                command = message['data'].decode('utf-8').strip().split()[0]
+                if command == "Download_tempID":
+                    start_time = datetime.datetime.now()
+                    #Create new tempID using tempID_generator to make user to duplicate tempID
+                    tempID = tempID_generator(TEMPID_FILE)
+                    update_tempID_file(user['data'],tempID,start_time)
+                    #store this tempID to the user data structure
+                    user[tempID] = start_time
+                    message = f"TempID: {tempID} {start_time.strftime('%d/%m/%Y %H:%M:%S')}"
+                    message_header = f"{len(message):<{HEADER_LENGTH}}".encode('utf-8')
+                    notified_socket.send(message_header+message.encode('utf-8'))
+                    #Server print out to the console
+                    print(f"> user: {user['data']}")
+                    print(f"> TempID: {tempID}")
                 
-                    message = CONTACT_LOG_CHECKING.encode('utf-8')
-                    message_header = f"{len(CONTACT_LOG_CHECKING):<{HEADER_LENGTH}}".encode('utf-8')
+
+                elif command == "Upload_contact_log":
+                #For this command, the client send two packets, first packet is about command, 
+                #second packet is about the message (the file's content)
+                    file_content = receive_message(notified_socket)
+                    if file_content is False:
+                        continue
+                    else:
+                        contact_log = file_content['data'].decode('utf-8').strip()
+                        print(f"> received contact log from {user['data']}")
+                        display_contact_log(contact_log,False)
+                        print("> Contact log checking")
+                        display_contact_log(contact_log,True)
+                    
+                        message = CONTACT_LOG_CHECKING.encode('utf-8')
+                        message_header = f"{len(CONTACT_LOG_CHECKING):<{HEADER_LENGTH}}".encode('utf-8')
+                        notified_socket.send(message_header+message)
+                
+                elif command == "logout":
+                    print("> "+user['data'] + " logout")
+                    message = LOGOUT.encode('utf-8')
+                    message_header = f"{len(LOGOUT):<{HEADER_LENGTH}}".encode('utf-8')
                     notified_socket.send(message_header+message)
-            
-            elif command == "logout":
-                print("> "+user['data'] + " logout")
-                message = LOGOUT.encode('utf-8')
-                message_header = f"{len(LOGOUT):<{HEADER_LENGTH}}".encode('utf-8')
-                notified_socket.send(message_header+message)
-                sockets_list.remove(notified_socket)
-                del clients[notified_socket]
+                    sockets_list.remove(notified_socket)
+                    del clients[notified_socket]
+                    
+                else:
+                    message = INVALID_COMMAND.encode('utf-8')
+                    message_header = f"{len(INVALID_COMMAND):<{HEADER_LENGTH}}".encode('utf-8')
+                    notified_socket.send(message_header+message)
                 
-            else:
-                message = INVALID_COMMAND.encode('utf-8')
-                message_header = f"{len(INVALID_COMMAND):<{HEADER_LENGTH}}".encode('utf-8')
+            except:
+                message = SPACE_ENTER.encode('utf-8')
+                message_header = f"{len(SPACE_ENTER):<{HEADER_LENGTH}}".encode('utf-8')
                 notified_socket.send(message_header+message)
-             
-
+                
