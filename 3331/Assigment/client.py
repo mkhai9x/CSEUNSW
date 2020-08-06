@@ -18,9 +18,24 @@ BLOCK_MESSAGE= "Your account is blocked due to multiple login failures. Please t
 INVALID_COMMAND = "Error.Invalidcommand"
 LOGOUT = "Logoutsuccessfully"
 
+CONTACT_LOG_CHECKING = "contactISBeingChecked"
 DOWNLOAD = "TempID:"
 SUCCESSFUL_LOGIN = False
 #Helper functions for client
+
+def send_file(filename,client_socket):
+    message = ''
+    file_object = open(filename,'r')
+    lines = file_object.readlines()
+    for line in lines:
+        #Diplays the log to the console in the client'terminal
+        infor = line.split()
+        print(f"{infor[0]}, {infor[1]}, {infor[2]}, {infor[3]}, {infor[4]};")
+        message+=line
+    message_length = len(message)
+    message = message.encode('utf-8')
+    message_header = f"{message_length:<{HEADER_LENGTH}}".encode('utf-8')
+    client_socket.send(message_header+message)
 #This function is used to process message
 def receive_message(client_socket):
     try:
@@ -33,9 +48,12 @@ def receive_message(client_socket):
     except:
         return False 
 def request_command(client_socket, command):
-    message = command.encode('utf-8')
-    message_header =  f"{len(command):<{HEADER_LENGTH}}".encode('utf-8')
-    client_socket.send(message_header+message)
+    command = command.encode('utf-8')
+    command_header =  f"{len(command):<{HEADER_LENGTH}}".encode('utf-8')
+    client_socket.send(command_header+command)
+    #Check if the command is Upload_contact_log, we need to send the information of the file
+    if(command.decode('utf-8') == "Upload_contact_log"):
+        send_file("z5168080_contactlog.txt",client_socket)
 
 client_socket = socket.socket(socket.AF_INET,socket.SOCK_STREAM)
 
@@ -64,6 +82,7 @@ client_socket.send(login_info_header + login_info)
 
 
 while True:
+ 
     read_sockets, _, exception_sockets = select.select(sockets_list,[],sockets_list)
   
     for notified_socket in read_sockets:
@@ -91,7 +110,7 @@ while True:
             elif server_reply == LOGIN_SUCCESSFUL:
                 print(LOGIN_SUCCESSFUL)
                 SUCCESSFUL_LOGIN = True
-                command = input().strip()
+                command = input("> ").strip()
                 request_command(notified_socket,command)
            
             
@@ -108,9 +127,12 @@ while True:
                 sys.exit(1)
             elif server_reply == DOWNLOAD:
                 print(server_message['data'].decode('utf-8'))
-                command = input().strip()
+                command = input("> ").strip()
                 request_command(notified_socket,command)
             elif server_reply == INVALID_COMMAND:
                 print("Error. Invalid command")
-                command = input().strip()
+                command = input("> ").strip()
+                request_command(notified_socket,command)
+            elif server_reply == CONTACT_LOG_CHECKING:
+                command = input("> ").strip()
                 request_command(notified_socket,command)
